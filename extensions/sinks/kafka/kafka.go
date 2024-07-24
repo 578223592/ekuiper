@@ -1,4 +1,4 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,30 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package file
+package kafka
 
-type FileType string
-
-const (
-	JSON_TYPE    FileType = "json"
-	CSV_TYPE     FileType = "csv"
-	LINES_TYPE   FileType = "lines"
-	PARQUET_TYPE FileType = "parquet"
+import (
+	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/extensions/impl/kafka"
 )
 
-const (
-	GZIP = "gzip"
-	ZSTD = "zstd"
-)
-
-var fileTypes = map[FileType]struct{}{
-	JSON_TYPE:    {},
-	CSV_TYPE:     {},
-	LINES_TYPE:   {},
-	PARQUET_TYPE: {},
-}
-
-var compressionTypes = map[string]struct{}{
-	GZIP: {},
-	ZSTD: {},
-}
+func Kafka() api.Sink { return kafka.GetSink() }

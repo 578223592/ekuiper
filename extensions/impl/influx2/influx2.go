@@ -15,6 +15,7 @@
 package influx2
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"strings"
@@ -57,7 +58,28 @@ type influxSink2 struct {
 	cli client.Client
 }
 
-func (m *influxSink2) Provision(ctx api.StreamContext, props map[string]any) error {
+func (m *influxSink2) Ping(_ string, props map[string]interface{}) error {
+	if err := m.Provision(nil, props); err != nil {
+		return err
+	}
+	options := client.DefaultOptions().SetPrecision(m.conf.Precision).SetBatchSize(uint(m.conf.BatchSize))
+	if m.tlsconf != nil {
+		options = options.SetTLSConfig(m.tlsconf)
+	}
+	m.cli = client.NewClientWithOptions(m.conf.Addr, m.conf.Token, options)
+	defer func() {
+		if m.cli != nil {
+			m.cli.Close()
+		}
+	}()
+	pingable, err := m.cli.Ping(context.Background())
+	if err != nil || !pingable {
+		return fmt.Errorf("error connecting to influxdb2: %v", err)
+	}
+	return nil
+}
+
+func (m *influxSink2) Provision(_ api.StreamContext, props map[string]any) error {
 	m.conf = c{
 		PrecisionStr: "ms",
 		WriteOptions: tspoint.WriteOptions{
@@ -89,7 +111,7 @@ func (m *influxSink2) Provision(ctx api.StreamContext, props map[string]any) err
 	default:
 		return fmt.Errorf("precision %s is not supported", m.conf.PrecisionStr)
 	}
-	if len(m.conf.Measurement) == 0 {
+	if len(m.conf.Measurement) == 0 && !m.conf.UseLineProtocol {
 		return fmt.Errorf("measurement is required")
 	}
 	err = cast.MapToStruct(props, &m.conf.WriteOptions)
