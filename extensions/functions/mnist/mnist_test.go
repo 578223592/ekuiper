@@ -67,7 +67,7 @@ func Test_mnist_Exec(t *testing.T) {
 			}
 
 			out, got1 := f.Exec(tt.args.in0, tt.args.args)
-			
+
 			if !got1 {
 				t.Errorf("Exec() error = %v, wantErr %v", got1, tt.want1)
 			}
@@ -103,3 +103,63 @@ ok      github.com/lf-edge/ekuiper/v2/extensions/functions/mnist        0.030s
 
 
 */
+
+func Benchmark_mnist_Exec(t *testing.B) {
+	type fields struct {
+		modelPath         string
+		once              sync.Once
+		inputShape        ort.Shape
+		outputShape       ort.Shape
+		sharedLibraryPath string
+		initModelError    error
+	}
+	type args struct {
+		in0  api.FunctionContext
+		args []any
+	}
+	tt := struct {
+		name   string
+		fields fields
+		args   args
+		want   any
+		want1  bool
+	}{
+
+		name: "test1",
+		fields: fields{
+			modelPath:         "etc/mnist.onnx",
+			once:              sync.Once{},
+			inputShape:        ort.NewShape(1, 1, 28, 28),
+			outputShape:       ort.NewShape(1, 10),
+			sharedLibraryPath: "etc/onnxruntime.so",
+			initModelError:    nil,
+		},
+		args: args{
+			in0: nil,
+			args: func() []any {
+				args := make([]any, 0)
+				bits, _ := os.ReadFile("./img.png")
+				args = append(args, bits)
+				return args
+			}(),
+		},
+		want:  nil,
+		want1: false,
+	}
+
+	f := &MnistFunc{
+		modelPath:         tt.fields.modelPath,
+		inputShape:        tt.fields.inputShape,
+		outputShape:       tt.fields.outputShape,
+		sharedLibraryPath: tt.fields.sharedLibraryPath,
+		initModelError:    tt.fields.initModelError,
+	}
+
+	out, _ := f.Exec(tt.args.in0, tt.args.args)
+
+	// if !got1 {
+	// 	t.Errorf("Exec() error = %v, wantErr %v", got1, tt.want1)
+	// }
+	fmt.Println(out)
+
+}
